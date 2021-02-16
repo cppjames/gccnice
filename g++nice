@@ -1,0 +1,2 @@
+#!/bin/sh
+g++ -fdiagnostics-format=json "$@" 2>&1 >/dev/null | python3 ./gccfancy.py >&2
