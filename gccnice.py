@@ -12,6 +12,10 @@ color_red = '\033[91m'
 color_yellow = '\033[93m'
 color_cyan = '\033[96m'
 
+def exit_error(error):
+    print(error)
+    exit()
+
 def getTerminalWidth():
     return shutil.get_terminal_size((80, 24)).columns
 
@@ -20,7 +24,11 @@ def readMessageJson():
     for line in fileinput.input():
         gcc_output += line
 
-    return json.loads(gcc_output)
+    try:
+        return json.loads(gcc_output)
+    except:
+        print(gcc_output)
+        exit()
 
 def wrap(text, text_width, horizontal = ' ', vertical = ' ',
          top_left = ' ', top_right = ' ', bottom_left = ' ', bottom_right = ' ',
@@ -123,6 +131,7 @@ def getCodeBox(location, width, color):
 
     location_file = getLocationFile(location)
     location_line = getLocationLine(location)
+    location_column = location['caret']['column']
     code_lines = getCodeLines(location_file, location_line - 1, location_line + 1)
     num_width = lineNumberMaxWidth(location_line)
 
@@ -131,10 +140,36 @@ def getCodeBox(location, width, color):
         if (line == None):
             continue
 
-        wrapped_line = textwrap.fill(line, code_width - 1 - (num_width + 3))
-        
-        num_color = (bold(color)) if i == 1 else color_gray
+        if i == 1:
+            num_color = bold(color)
+        else:
+            num_color = color_gray
         line_prefix = getLinePrefix(num_width, location_line - 1 + i, num_color)
+
+        wrapped_line = textwrap.fill(line, code_width - 1 - (num_width + 3))
+
+        column = 1;
+
+        finish_line = location_line
+        finish_column = location_column
+        if 'finish' in location: 
+            finish_line = location['finish']['line']
+            finish_column = location['finish']['column']
+
+        color_wrapped_line = []
+        wrapped_line_split = wrapped_line.split('\n')
+        for sub_line in wrapped_line_split:
+            color_line = ""
+            for char in sub_line:
+                file_line = location_line - 1 + i
+                if (file_line >= location_line and file_line <= finish_line and
+                    column >= location_column and column <= finish_column):
+                    color_line += colorText(char, bold(color))
+                else:
+                    color_line += char
+                column += 1
+            color_wrapped_line.append(color_line)
+        wrapped_line = '\n'.join(color_wrapped_line)
 
         code_lines_final.append(line_prefix + wrapped_line.split('\n')[0] + '\n')
         for sub_line in wrapped_line.split('\n')[1:]:
