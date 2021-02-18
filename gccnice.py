@@ -12,9 +12,47 @@ color_red = '\033[91m'
 color_yellow = '\033[93m'
 color_cyan = '\033[96m'
 
+config = {'frame': 'round',
+          'max_width': 60}
+
+box_lines = {
+    'round':  {'h': '\u2500',
+               'v': '\u2502',
+               'top_left': '\u256D',
+               'top_right': '\u256E',
+               'bottom_left':'\u2570',
+               'bottom_right': '\u256F'},
+    'square': {'h': '\u2500',
+               'v': '\u2502',
+               'top_left': '\u250C',
+               'top_right': '\u2510',
+               'bottom_left':'\u2514',
+               'bottom_right': '\u2518'},
+    'ascii':  {'h': '-',
+               'v': '|',
+               'top_left': '-',
+               'top_right': '-',
+               'bottom_left': '-',
+               'bottom_right': '-'}
+}
+
 def exit_error(error):
     print(error)
     exit()
+
+def readConfigFile():
+    config_path = os.path.expanduser('~') + '/.config/gccnicerc';
+
+    try:
+        config_file = open(config_path, 'r')
+        config_json = json.loads(config_file.read())
+        for key in config:
+            if key in config_json:
+                config[key] = config_json[key]
+    except:
+        config_file = open(config_path, 'w')
+        config_file.write(json.dumps(default_config, indent = 4))
+        config_file.close()
 
 def getTerminalWidth():
     return shutil.get_terminal_size((80, 24)).columns
@@ -71,13 +109,15 @@ def bold(color):
 def wrapInOutline(text, text_width, label = None, color = color_normal,
                   label_left = True, label_color = None):
 
+    lines = box_lines[config['frame']]
+
     text = wrap(text, text_width,
-                horizontal = '\u2500',
-                vertical = color + '\u2502' + color_normal,
-                top_left = color + '\u256D',
-                top_right = '\u256E' + color_normal,
-                bottom_left = color + '\u2570',
-                bottom_right = '\u256F' + color_normal)
+                horizontal = lines['h'],
+                vertical = color + lines['v'] + color_normal,
+                top_left = color + lines['top_left'],
+                top_right = lines['top_right'] + color_normal,
+                bottom_left = color + lines['bottom_left'],
+                bottom_right = lines['bottom_right'] + color_normal)
 
     final_label = label
     if label_color:
@@ -210,7 +250,9 @@ def printMessage(message, width):
         print(' ' + line)
 
 if __name__ == '__main__':
-    term_width = min(getTerminalWidth(), 60)
+    readConfigFile()
+
+    term_width = min(getTerminalWidth(), config['max_width'])
     gcc_json = readMessageJson()
 
     print("")
