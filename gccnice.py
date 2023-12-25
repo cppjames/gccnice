@@ -41,17 +41,21 @@ def exit_error(error):
     exit()
 
 def readConfigFile():
-    config_path = os.path.expanduser('~') + '/.config/gccnicerc';
+    config_path = os.path.expanduser('~') + '/.config/';
+    config_filename = 'gccnicerc'
 
     try:
-        config_file = open(config_path, 'r')
+        config_file = open(config_path + config_filename, 'r')
         config_json = json.loads(config_file.read())
+
         for key in config:
             if key in config_json:
                 config[key] = config_json[key]
     except:
-        config_file = open(config_path, 'w')
-        config_file.write(json.dumps(default_config, indent = 4))
+        os.makedirs(config_path, exist_ok = True)
+
+        config_file = open(config_path + config_filename, 'w')
+        config_file.write(json.dumps(config, indent = 4))
         config_file.close()
 
 def getTerminalWidth():
@@ -64,7 +68,7 @@ def readMessageJson():
 
     try:
         return json.loads(gcc_output)
-    except:
+    except: # This is not a compiler error and was not JSON-formatted.
         print(gcc_output)
         exit()
 
@@ -80,10 +84,11 @@ def wrap(text, text_width, horizontal = ' ', vertical = ' ',
                 + top_right
                 + '\n')
 
-    final += '\n'.join((vertical if wrap_horizontal else '')
+    vertical_char = vertical if wrap_horizontal else ''
+    final += '\n'.join(vertical_char
                        + line
                        + ' ' * (text_width - len(removeColorSequences(line)))
-                       + (vertical if wrap_horizontal else '')
+                       + vertical_char
                        for line in text.split('\n'))
 
     if (wrap_vertical):
